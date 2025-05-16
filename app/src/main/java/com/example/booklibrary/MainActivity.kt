@@ -4,7 +4,9 @@ import android.os.Bundle
 import android.view.View
 import android.widget.EditText
 import android.widget.ImageButton
+import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.RelativeLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
@@ -19,24 +21,28 @@ class MainActivity : AppCompatActivity() {
     private lateinit var loadingPB: ProgressBar
     private lateinit var searchEdt: EditText
     private lateinit var searchBtn: ImageButton
+    private lateinit var searchBarLayout: LinearLayout
+    private lateinit var recyclerView: RecyclerView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Initializing UI elements
         loadingPB = findViewById(R.id.idLoadingPB)
         searchEdt = findViewById(R.id.idEdtSearchBooks)
         searchBtn = findViewById(R.id.idBtnSearch)
+        searchBarLayout = findViewById(R.id.idLLsearch)
+        recyclerView = findViewById(R.id.idRVBooks)
 
-        // Search button click listener
         searchBtn.setOnClickListener {
             val query = searchEdt.text.toString().trim()
             if (query.isEmpty()) {
                 searchEdt.error = "Please enter a search query"
             } else {
                 loadingPB.visibility = View.VISIBLE
+                recyclerView.visibility = View.GONE
                 getBooksData(query)
+                moveSearchBarToTop()
             }
         }
     }
@@ -65,7 +71,6 @@ class MainActivity : AppCompatActivity() {
                     val previewLink = volumeObj.optString("previewLink", "")
                     val infoLink = volumeObj.optString("infoLink", "")
 
-                    // Handle authors array safely
                     val authorsArrayList = ArrayList<String>()
                     val authorsArray = volumeObj.optJSONArray("authors")
                     authorsArray?.let {
@@ -74,40 +79,30 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
 
-                    // Get image links safely
                     val imageLinks = volumeObj.optJSONObject("imageLinks")
                     var thumbnail = imageLinks?.optString("thumbnail", "") ?: ""
-
-                    // Convert HTTP to HTTPS
                     if (thumbnail.startsWith("http://")) {
                         thumbnail = thumbnail.replace("http://", "https://")
                     }
 
-                    // Handle Buy Link safely
                     val saleInfoObj = itemsObj.optJSONObject("saleInfo")
                     var buyLink = saleInfoObj?.optString("buyLink", "") ?: ""
-
-                    // Ensure buyLink starts with HTTPS
                     if (buyLink.isNotEmpty() && !buyLink.startsWith("http")) {
                         buyLink = "https://$buyLink"
                     }
 
-                    // Creating Book Object
                     val bookInfo = BookRVModal(
                         title, subtitle, authorsArrayList, publisher, publishedDate,
                         description, pageCount, thumbnail, previewLink, infoLink, buyLink
                     )
-
                     booksList.add(bookInfo)
                 }
 
-                // Update RecyclerView after parsing all books
                 val adapter = BookRVAdapter(booksList, this@MainActivity)
                 val layoutManager = GridLayoutManager(this, 3)
-                val mRecyclerView = findViewById<RecyclerView>(R.id.idRVBooks)
-
-                mRecyclerView.layoutManager = layoutManager
-                mRecyclerView.adapter = adapter
+                recyclerView.layoutManager = layoutManager
+                recyclerView.adapter = adapter
+                recyclerView.visibility = View.VISIBLE
 
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -119,5 +114,13 @@ class MainActivity : AppCompatActivity() {
         })
 
         queue.add(request)
+    }
+
+    private fun moveSearchBarToTop() {
+        val layoutParams = searchBarLayout.layoutParams as RelativeLayout.LayoutParams
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP)
+        layoutParams.removeRule(RelativeLayout.CENTER_IN_PARENT)
+        layoutParams.topMargin = 32
+        searchBarLayout.layoutParams = layoutParams
     }
 }

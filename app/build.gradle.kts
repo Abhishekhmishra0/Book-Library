@@ -36,8 +36,8 @@ android {
 }
 
 dependencies {
-    implementation ("com.squareup.picasso:picasso:2.8")
-    implementation("com.android.volley:volley:1.2.1")
+    implementation (libs.picasso)
+    implementation(libs.volley)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
